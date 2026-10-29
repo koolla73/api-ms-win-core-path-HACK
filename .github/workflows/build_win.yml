@@ -1,0 +1,42 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: cmd
+        
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Install Visual Studio platform toolset v141
+      run: |
+        "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\setup.exe" modify --quiet --norestart --includeRecommended --installPath "C:\Program Files\Microsoft Visual Studio\18\Enterprise" --channelId VisualStudio.15.Release --add Microsoft.VisualStudio.Component.VC.v141.x86.x64
+
+    - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        toolset: 14.16
+    - name: Build
+      run: |
+        "%ProgramFiles%/Microsoft Visual Studio/18/Enterprise/MSBuild/Current/Bin/msbuild.exe" api-ms-win-core-path-blender.sln /p:Configuration=Release /p:Platform=x64
+
+    - name: List dir
+      run: dir /S ${{github.workspace}}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: api-win
+        path: ${{github.workspace}}\build\x64\Release\api-ms-win-core-path-l1-1-0.dll
+        if-no-files-found: error
+        retention-days: 1
